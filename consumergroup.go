@@ -238,6 +238,8 @@ func (cgi *ConsumergroupInstance) ClaimPartition(topic string, partition int32) 
 
 // ReleasePartition releases a claim to a partition.
 func (cgi *ConsumergroupInstance) ReleasePartition(topic string, partition int32) error {
+	cgi.claimLock.Lock()
+	defer cgi.claimLock.Unlock()
 	owner, err := cgi.cg.PartitionOwner(topic, partition)
 	if err != nil {
 		return err
