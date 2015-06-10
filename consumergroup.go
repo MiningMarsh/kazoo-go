@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/samuel/go-zookeeper/zk"
+	"sync"
 )
 
 var (
@@ -31,6 +32,7 @@ type Consumergroup struct {
 type ConsumergroupInstance struct {
 	cg *Consumergroup
 	ID string
+	claimLock sync.Mutex
 }
 
 type ConsumergroupList []*Consumergroup
@@ -215,6 +217,8 @@ func (cgi *ConsumergroupInstance) Deregister() error {
 // Claim claims a topic/partition ownership for a consumer ID within a group. If the
 // partition is already claimed by another running instance, it will return ErrAlreadyClaimed.
 func (cgi *ConsumergroupInstance) ClaimPartition(topic string, partition int32) error {
+	cgi.claimLock.Lock()
+	defer cgi.claimLock.Unlock()
 	root := fmt.Sprintf("%s/consumers/%s/owners/%s", cgi.cg.kz.conf.Chroot, cgi.cg.Name, topic)
 	if err := cgi.cg.kz.mkdirRecursive(root); err != nil {
 		return err
